@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Nano Lab - 협업 문헌 관리</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>Nano Lab MVP</h1>
+    <p class="subtitle">웹페이지처럼 바로 공유 가능한 프로젝트 허브</p>
+
+    <section class="card">
+      <h2>새 프로젝트 만들기</h2>
+      <form method="post" action="/web/projects" class="form-grid">
+        <label>프로젝트 이름
+          <input type="text" name="name" required placeholder="예: 논문 비교 분석" />
+        </label>
+        <label>설명
+          <textarea name="description" rows="3" placeholder="팀 목적 / 범위"></textarea>
+        </label>
+        <button type="submit">프로젝트 생성</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>프로젝트 목록</h2>
+      {% if projects %}
+      <ul class="list">
+        {% for p in projects %}
+          <li>
+            <a href="/projects/{{ p.id }}/view">{{ p.name }}</a>
+            <small>{{ p.status }} · {{ p.created_at }}</small>
+          </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p>아직 프로젝트가 없습니다.</p>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>

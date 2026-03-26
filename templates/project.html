@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ project.name }} - Nano Lab</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="container">
+    <a href="/">← 홈으로</a>
+    <h1>{{ project.name }}</h1>
+    <p class="subtitle">{{ project.description }}</p>
+
+    <section class="card highlight">
+      <h2>공유 링크</h2>
+      <p>이 주소를 팀원에게 보내면 같은 페이지를 볼 수 있습니다.</p>
+      <input type="text" value="{{ share_url }}" readonly onclick="this.select();" />
+    </section>
+
+    <div class="grid-2">
+      <section class="card">
+        <h2>문헌 업로드</h2>
+        <form method="post" action="/projects/{{ project.id }}/web/documents" enctype="multipart/form-data">
+          <input type="file" name="file" required />
+          <button type="submit">업로드</button>
+        </form>
+        <ul class="list">
+          {% for d in documents %}
+          <li>
+            <strong>{{ d.filename }}</strong>
+            <details>
+              <summary>추출 텍스트 보기</summary>
+              <pre>{{ d.extracted_text }}</pre>
+            </details>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>요구사항</h2>
+        <form method="post" action="/projects/{{ project.id }}/web/requirements" class="form-grid">
+          <input type="text" name="title" required placeholder="요구사항 제목" />
+          <textarea name="detail" rows="2" placeholder="상세 내용"></textarea>
+          <select name="priority">
+            <option value="high">high</option>
+            <option value="medium" selected>medium</option>
+            <option value="low">low</option>
+          </select>
+          <button type="submit">추가</button>
+        </form>
+        <ul class="list">
+          {% for r in requirements %}
+            <li>[{{ r.priority }}] <strong>{{ r.title }}</strong> - {{ r.detail }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>작업 목록</h2>
+      <form method="post" action="/projects/{{ project.id }}/web/tasks" class="inline-form">
+        <input type="text" name="title" required placeholder="할 일 입력" />
+        <button type="submit">추가</button>
+      </form>
+      <ul class="list">
+        {% for t in tasks %}
+          <li>{{ t.title }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
