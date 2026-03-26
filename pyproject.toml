@@ -2,7 +2,7 @@
 name = "nano-lab-mvp"
 version = "0.1.0"
 description = "MVP backend for workflow-driven project and document analysis"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
   "fastapi>=0.115.0",
   "uvicorn>=0.30.0",
