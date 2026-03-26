@@ -26,7 +26,7 @@ def on_startup() -> None:
 @app.get("/", response_class=HTMLResponse)
 def web_home(request: Request, session: SessionDep):
     projects = list(session.exec(select(Project).order_by(Project.created_at.desc())).all())
-    return templates.TemplateResponse("index.html", {"request": request, "projects": projects})
+    return templates.TemplateResponse(request=request, name="index.html", context={"request": request, "projects": projects})
 
 
 @app.post("/web/projects")
@@ -50,8 +50,9 @@ def web_project_view(project_id: int, request: Request, session: SessionDep):
     share_url = str(request.url)
 
     return templates.TemplateResponse(
-        "project.html",
-        {
+        request=request,
+        name="project.html",
+        context={
             "request": request,
             "project": project,
             "requirements": reqs,
