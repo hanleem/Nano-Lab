@@ -30,7 +30,7 @@ def web_home(request: Request, session: SessionDep):
 
 
 @app.post("/web/projects")
-def web_create_project(name: str = Form(...), description: str = Form(""), session: SessionDep = Depends(get_session)):
+def web_create_project(session: SessionDep, name: str = Form(...), description: str = Form("")):
     project = Project(name=name, description=description)
     session.add(project)
     session.commit()
@@ -65,10 +65,10 @@ def web_project_view(project_id: int, request: Request, session: SessionDep):
 @app.post("/projects/{project_id}/web/requirements")
 def web_add_requirement(
     project_id: int,
+    session: SessionDep,
     title: str = Form(...),
     detail: str = Form(""),
     priority: str = Form("medium"),
-    session: SessionDep = Depends(get_session),
 ):
     if not session.get(Project, project_id):
         raise HTTPException(status_code=404, detail="Project not found")
@@ -79,7 +79,7 @@ def web_add_requirement(
 
 
 @app.post("/projects/{project_id}/web/tasks")
-def web_add_task(project_id: int, title: str = Form(...), session: SessionDep = Depends(get_session)):
+def web_add_task(project_id: int, session: SessionDep, title: str = Form(...)):
     if not session.get(Project, project_id):
         raise HTTPException(status_code=404, detail="Project not found")
     task = Task(project_id=project_id, title=title)
@@ -89,7 +89,7 @@ def web_add_task(project_id: int, title: str = Form(...), session: SessionDep = 
 
 
 @app.post("/projects/{project_id}/web/documents")
-async def web_upload_document(project_id: int, file: UploadFile = File(...), session: SessionDep = Depends(get_session)):
+async def web_upload_document(project_id: int, session: SessionDep, file: UploadFile = File(...)):
     if not session.get(Project, project_id):
         raise HTTPException(status_code=404, detail="Project not found")
     content = await file.read()
