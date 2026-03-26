@@ -1,7 +1,9 @@
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import PlainTextResponse, Response
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from app.db import get_session, init_db
@@ -9,7 +11,9 @@ from app.models import Document, Project, ProjectStatus, Requirement, Task
 from app.schemas import CompareRequest, CompareResult, ProjectCreate, ProjectRead, RequirementCreate, TaskCreate
 from app.services import compare_texts, requirements_to_csv, simple_ocr
 
-app = FastAPI(title="Nano Lab MVP API", version="0.1.0")
+app = FastAPI(title="Nano Lab MVP API", version="0.2.0")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 SessionDep = Annotated[Session, Depends(get_session)]
 
 
@@ -18,6 +22,85 @@ def on_startup() -> None:
     init_db()
 
 
+# ===== Web pages =====
+@app.get("/", response_class=HTMLResponse)
+def web_home(request: Request, session: SessionDep):
+    projects = list(session.exec(select(Project).order_by(Project.created_at.desc())).all())
+    return templates.TemplateResponse("index.html", {"request": request, "projects": projects})
+
+
+@app.post("/web/projects")
+def web_create_project(name: str = Form(...), description: str = Form(""), session: SessionDep = Depends(get_session)):
+    project = Project(name=name, description=description)
+    session.add(project)
+    session.commit()
+    session.refresh(project)
+    return RedirectResponse(url=f"/projects/{project.id}/view", status_code=303)
+
+
+@app.get("/projects/{project_id}/view", response_class=HTMLResponse)
+def web_project_view(project_id: int, request: Request, session: SessionDep):
+    project = session.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    reqs = list(session.exec(select(Requirement).where(Requirement.project_id == project_id).order_by(Requirement.created_at.desc())).all())
+    tasks = list(session.exec(select(Task).where(Task.project_id == project_id).order_by(Task.created_at.desc())).all())
+    docs = list(session.exec(select(Document).where(Document.project_id == project_id).order_by(Document.created_at.desc())).all())
+    share_url = str(request.url)
+
+    return templates.TemplateResponse(
+        "project.html",
+        {
+            "request": request,
+            "project": project,
+            "requirements": reqs,
+            "tasks": tasks,
+            "documents": docs,
+            "share_url": share_url,
+        },
+    )
+
+
+@app.post("/projects/{project_id}/web/requirements")
+def web_add_requirement(
+    project_id: int,
+    title: str = Form(...),
+    detail: str = Form(""),
+    priority: str = Form("medium"),
+    session: SessionDep = Depends(get_session),
+):
+    if not session.get(Project, project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
+    req = Requirement(project_id=project_id, title=title, detail=detail, priority=priority)
+    session.add(req)
+    session.commit()
+    return RedirectResponse(url=f"/projects/{project_id}/view", status_code=303)
+
+
+@app.post("/projects/{project_id}/web/tasks")
+def web_add_task(project_id: int, title: str = Form(...), session: SessionDep = Depends(get_session)):
+    if not session.get(Project, project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
+    task = Task(project_id=project_id, title=title)
+    session.add(task)
+    session.commit()
+    return RedirectResponse(url=f"/projects/{project_id}/view", status_code=303)
+
+
+@app.post("/projects/{project_id}/web/documents")
+async def web_upload_document(project_id: int, file: UploadFile = File(...), session: SessionDep = Depends(get_session)):
+    if not session.get(Project, project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
+    content = await file.read()
+    text = simple_ocr(file.filename, content)
+    doc = Document(project_id=project_id, filename=file.filename, extracted_text=text)
+    session.add(doc)
+    session.commit()
+    return RedirectResponse(url=f"/projects/{project_id}/view", status_code=303)
+
+
+# ===== API endpoints =====
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}

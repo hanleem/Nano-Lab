@@ -48,3 +48,30 @@ def test_compare_endpoint() -> None:
     data = res.json()
     assert 0 <= data['overlap_score'] <= 1
     assert 'alpha' in data['left_only']
+
+
+def test_web_home_page_renders() -> None:
+    res = client.get('/')
+    assert res.status_code == 200
+    assert 'Nano Lab MVP' in res.text
+
+
+def test_web_project_page_and_forms() -> None:
+    create = client.post('/projects', json={'name': 'Web Demo', 'description': 'share test'})
+    project_id = create.json()['id']
+
+    req = client.post(
+        f'/projects/{project_id}/web/requirements',
+        data={'title': '공유 기능', 'detail': 'URL로 전달', 'priority': 'high'},
+        follow_redirects=True,
+    )
+    assert req.status_code == 200
+    assert '공유 링크' in req.text
+
+    task = client.post(
+        f'/projects/{project_id}/web/tasks',
+        data={'title': '첫 회의 일정 잡기'},
+        follow_redirects=True,
+    )
+    assert task.status_code == 200
+    assert '첫 회의 일정 잡기' in task.text

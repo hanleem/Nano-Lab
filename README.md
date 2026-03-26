@@ -1,6 +1,6 @@
-# Nano Lab MVP (FastAPI)
+# Nano Lab MVP (FastAPI + Web UI)
 
-Quick MVP backend for a workflow that includes:
+Quick MVP backend + simple shareable web page for:
 - project setup/activation
 - requirement/task management
 - document upload + placeholder OCR extraction
@@ -10,6 +10,16 @@ Quick MVP backend for a workflow that includes:
 
 ## Requirements
 - Python 3.10+
+
+## Run on Windows (cmd)
+
+```bat
+py -3.10 -m venv .venv
+.venv\Scripts\activate.bat
+python -m pip install --upgrade pip
+pip install -e ".[dev]"
+uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
 
 ## Run on Windows (PowerShell)
 
@@ -27,18 +37,6 @@ If PowerShell blocks activation scripts, run:
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
-Then activate again.
-
-## Run on Windows (cmd)
-
-```bat
-py -3.10 -m venv .venv
-.venv\Scripts\activate.bat
-python -m pip install --upgrade pip
-pip install -e ".[dev]"
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-```
-
 ## Run on macOS/Linux
 
 ```bash
@@ -49,9 +47,11 @@ pip install -e '.[dev]'
 uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Open `http://127.0.0.1:8000/docs` for Swagger UI.
+## What to open in browser
+- Main web page (for non-developers): `http://127.0.0.1:8000/`
+- API docs (Swagger): `http://127.0.0.1:8000/docs`
 
-## Main endpoints
+## Main API endpoints
 - `POST /projects`
 - `PATCH /projects/{id}/activate`
 - `POST /projects/{id}/requirements`
@@ -63,3 +63,4 @@ Open `http://127.0.0.1:8000/docs` for Swagger UI.
 
 ## Notes
 - OCR/PDF generation is MVP placeholder logic intended to be replaced with real integrations.
+- The `/projects/{id}/view` page is shareable by URL in this MVP (no authentication yet).
